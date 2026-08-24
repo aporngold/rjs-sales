@@ -6,13 +6,16 @@
   <title>RJSE AI Sales Intelligence — บจก. รุ่งจรัสแสงการไฟฟ้า</title>
   
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- SheetJS สำหรับ Export เป็นไฟล์ Excel คุณภาพสูง -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <!-- Chart.js สำหรับกราฟวิเคราะห์ยอดขาย -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Leaflet Map CSS & JS สำหรับแผนที่ -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
   <style>
@@ -27,7 +30,7 @@
 <body class="bg-slate-950 text-slate-100 min-h-screen">
 
   <div class="max-w-[1600px] mx-auto px-4 py-8">
-    <!-- Header -->
+    <!-- Header Section -->
     <header class="flex flex-col md:flex-row md:items-center justify-between pb-6 border-b border-slate-800 gap-4">
       <div>
         <div class="flex items-center gap-3">
@@ -37,6 +40,7 @@
         <p class="text-slate-400 text-sm mt-1">ระบบชี้เป้าและติดตามโอกาสงานระบบไฟฟ้า — บจก. รุ่งจรัสแสงการไฟฟ้า</p>
       </div>
       
+      <!-- Action Controls -->
       <div class="flex flex-wrap items-center gap-2.5">
         <span class="inline-flex items-center gap-1.5 bg-emerald-950 text-emerald-400 border border-emerald-800 text-xs px-3 py-2 rounded-lg">
           <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Cloud Live
@@ -47,7 +51,7 @@
         </button>
         <button onclick="exportToExcel()" class="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold px-3.5 py-2 rounded-lg shadow transition">
           <span>📊</span>
-          <span>โหลดรายงาน Excel</span>
+          <span>โหลดรายงาน Excel (A4)</span>
         </button>
         <button id="syncBtn" onclick="syncLiveLeads()" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold px-4 py-2 rounded-lg shadow transition">
           <span id="syncIcon">🔄</span>
@@ -56,7 +60,7 @@
       </div>
     </header>
 
-    <!-- KPI Cards & Chart -->
+    <!-- KPI Summary Cards & Pipeline Chart -->
     <section class="grid grid-cols-1 lg:grid-cols-3 gap-6 my-6">
       <div class="lg:col-span-2 grid grid-cols-2 gap-4 content-start">
         <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
@@ -85,14 +89,14 @@
       </div>
     </section>
 
-    <!-- Controls -->
+    <!-- View Switcher & Search Filter Controls -->
     <div class="flex flex-col sm:flex-row justify-between gap-3 mb-4">
       <div class="flex flex-1 gap-2">
         <input type="text" id="searchInput" oninput="filterData()" placeholder="🔍 ค้นหาชื่อโครงการ, ผู้รับเหมา หรือเบอร์โทร..." class="bg-slate-900 border border-slate-700 text-xs rounded-lg px-3.5 py-2 text-slate-200 placeholder-slate-500 focus:outline-none focus:border-amber-400 flex-1">
         <select id="tierFilter" onchange="filterData()" class="bg-slate-900 border border-slate-700 text-xs rounded-lg px-3.5 py-2 text-slate-200 focus:outline-none focus:border-amber-400">
-          <option value="ALL">📌 ทุกคะแนน</option>
-          <option value="HOT">🔥 เฉพาะ HOT</option>
-          <option value="WARM">⚡ ระดับ WARM</option>
+          <option value="ALL">📌 ทุกระดับคะแนน</option>
+          <option value="HOT">🔥 เฉพาะโอกาสสูง (HOT)</option>
+          <option value="WARM">⚡ ระดับปานกลาง (WARM)</option>
         </select>
       </div>
 
@@ -106,7 +110,7 @@
       </div>
     </div>
 
-    <!-- Table View -->
+    <!-- Table View Section -->
     <div id="tableViewSection" class="overflow-x-auto bg-slate-900 border border-slate-800 rounded-xl shadow-2xl">
       <table class="w-full text-left text-sm text-slate-300">
         <thead class="bg-slate-950 text-slate-400 uppercase text-xs border-b border-slate-800">
@@ -129,7 +133,7 @@
       </table>
     </div>
 
-    <!-- Map View -->
+    <!-- Map View Section -->
     <div id="mapViewSection" class="hidden bg-slate-900 border border-slate-800 p-4 rounded-xl shadow-2xl">
       <div class="flex items-center justify-between mb-3 px-1">
         <span class="text-xs text-slate-400">💡 คลิกที่หมุดบนแผนที่เพื่อดูข้อมูลผู้รับเหมาและเบอร์โทร</span>
@@ -192,7 +196,7 @@
     </div>
   </div>
 
-  <!-- AI Modal -->
+  <!-- AI Modal: ช่วยสรุปสเปกท่อ & ร่างอีเมลเสนอราคา -->
   <div id="aiModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50 overflow-y-auto">
     <div class="bg-slate-900 border border-slate-700 w-full max-w-3xl rounded-2xl p-6 shadow-2xl relative my-8">
       <button onclick="closeAIModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-xl">✕</button>
@@ -477,33 +481,88 @@
       }
     }
 
+    // ฟังก์ชัน Export Excel ฉบับจัดระยะเว้นขอบเซลล์ (Cell Padding) สวยงามสำหรับกระดาษ A4 แนวนอน
     function exportToExcel() {
       if (allLeads.length === 0) {
         alert("ไม่มีข้อมูลสำหรับ Export");
         return;
       }
 
-      const rows = allLeads.map((p, idx) => {
+      // 1. หัวกระดาษและแถวข้อมูลพร้อมเว้นช่องไฟซ้าย-ขวา ไม่ให้ตัวหนังสือติดเส้น
+      const wsData = [
+        [" บริษัท รุ่งจรัสแสงการไฟฟ้า จำกัด (RJSE AI Sales Intelligence) "],
+        [" รายงานติดตามโอกาสการขายและรายชื่อโครงการ (Sales Lead Pipeline Report) — ออกรายงานเมื่อ: " + new Date().toLocaleDateString('th-TH') + " "],
+        [],
+        [
+          " ลำดับ ", 
+          " ชื่อโครงการ / งานติดตั้ง ", 
+          " ประเภทโครงการ ", 
+          " บริษัทผู้รับเหมา ", 
+          " เบอร์โทรศัพท์ ", 
+          " งบประมาณ (บาท) ", 
+          " คะแนน ", 
+          " ระดับ ", 
+          " สถานะการติดตาม ", 
+          " บันทึกการคุย (Sales Note) "
+        ]
+      ];
+
+      let totalBudget = 0;
+
+      allLeads.forEach((p, idx) => {
         const opp = p.opportunities?.[0] || {};
-        const note = opp.score_reasons?.sales_note || "";
-        return {
-          "ลำดับ": idx + 1,
-          "ชื่อโครงการ": p.project_name,
-          "ประเภทโครงการ": p.project_type,
-          "บริษัทผู้รับเหมา": p.contractor_name || "-",
-          "เบอร์โทรศัพท์": p.contractor_phone || "-",
-          "งบประมาณ (บาท)": p.total_budget || 0,
-          "คะแนนโอกาสขาย (0-100)": opp.opportunity_score || 50,
-          "สถานะการติดตาม": opp.lead_status || "ยังไม่โทร",
-          "สินค้าที่แนะนำ": opp.recommended_products || "-",
-          "บันทึกการคุย (Sales Note)": note
-        };
+        const note = opp.score_reasons?.sales_note || "-";
+        const budget = p.total_budget || 0;
+        totalBudget += budget;
+
+        wsData.push([
+          ` ${idx + 1} `,
+          ` ${p.project_name || "-"} `,
+          ` ${p.project_type || "-"} `,
+          ` ${p.contractor_name || "-"} `,
+          ` ${p.contractor_phone || "-"} `,
+          budget,
+          ` ${opp.opportunity_score || 50} `,
+          ` ${opp.score_tier || "WARM"} `,
+          ` ${opp.lead_status || "ยังไม่โทร"} `,
+          ` ${note} `
+        ]);
       });
 
-      const worksheet = XLSX.utils.json_to_sheet(rows);
+      // แถวสรุปรวมมูลค่างบประมาณท้ายตาราง
+      wsData.push([
+        " รวมมูลค่างบประมาณโครงการทั้งหมด ", "", "", "", "",
+        totalBudget, "", "", "", ""
+      ]);
+
+      const worksheet = XLSX.utils.aoa_to_sheet(wsData);
+
+      // 2. กำหนดความกว้างคอลัมน์แบบโปร่งสบาย ตัวอักษรไม่เบียดขอบ
+      worksheet["!cols"] = [
+        { wch: 8 },   // ลำดับ
+        { wch: 36 },  // ชื่อโครงการ
+        { wch: 24 },  // ประเภท
+        { wch: 28 },  // บริษัทผู้รับเหมา
+        { wch: 16 },  // เบอร์โทรศัพท์
+        { wch: 20 },  // งบประมาณ
+        { wch: 10 },  // คะแนน
+        { wch: 10 },  // ระดับ
+        { wch: 16 },  // สถานะ
+        { wch: 34 }   // บันทึกการคุย
+      ];
+
+      // รวมเซลล์หัวรายงานและแถวสรุป
+      worksheet["!merges"] = [
+        { s: { r: 0, c: 0 }, e: { r: 0, c: 9 } },
+        { s: { r: 1, c: 0 }, e: { r: 1, c: 9 } },
+        { s: { r: wsData.length - 1, c: 0 }, e: { r: wsData.length - 1, c: 4 } }
+      ];
+
       const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, "Leads_Summary");
-      XLSX.writeFile(workbook, `RJSE_Sales_Leads_${new Date().toISOString().slice(0, 10)}.xlsx`);
+      XLSX.utils.book_append_sheet(workbook, worksheet, "RJSE_Sales_Report");
+
+      const fileName = `RJSE_Sales_Report_A4_${new Date().toISOString().slice(0, 10)}.xlsx`;
+      XLSX.writeFile(workbook, fileName);
     }
 
     function openAIModal(index) {

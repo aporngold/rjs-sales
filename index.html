@@ -6,6 +6,9 @@
   <title>RJSE AI Sales Intelligence — บจก. รุ่งจรัสแสงการไฟฟ้า</title>
   
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Library สำหรับ Export เป็น Excel -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -18,25 +21,26 @@
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen">
 
-  <div class="max-w-[1500px] mx-auto px-4 py-8">
+  <div class="max-w-[1600px] mx-auto px-4 py-8">
     <!-- Header -->
     <header class="flex flex-col md:flex-row md:items-center justify-between pb-6 border-b border-slate-800 gap-4">
       <div>
         <div class="flex items-center gap-3">
           <span class="text-3xl">⚡</span>
-          <h1 class="text-2xl font-bold text-amber-400">RJSE AI Sales Intelligence (Secure Live DB)</h1>
+          <h1 class="text-2xl font-bold text-amber-400">RJSE AI Sales Intelligence</h1>
         </div>
-        <p class="text-slate-400 text-sm mt-1">ระบบชี้เป้าและวิเคราะห์โอกาสงานระบบไฟฟ้า — บจก. รุ่งจรัสแสงการไฟฟ้า</p>
+        <p class="text-slate-400 text-sm mt-1">ระบบชี้เป้าและติดตามโอกาสงานระบบไฟฟ้า — บจก. รุ่งจรัสแสงการไฟฟ้า</p>
       </div>
       
-      <div class="flex items-center gap-3">
+      <div class="flex flex-wrap items-center gap-3">
+        <button onclick="exportToExcel()" class="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold px-3.5 py-2 rounded-lg shadow transition">
+          <span>📊</span>
+          <span>โหลดรายงาน Excel</span>
+        </button>
         <button id="syncBtn" onclick="syncLiveLeads()" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold px-4 py-2 rounded-lg shadow transition">
           <span id="syncIcon">🔄</span>
           <span id="syncText">ดึงโครงการใหม่เข้าระบบ</span>
         </button>
-        <span class="inline-flex items-center gap-1.5 bg-emerald-950 text-emerald-400 border border-emerald-800 text-xs px-3 py-1.5 rounded-lg">
-          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Cloud Live
-        </span>
       </div>
     </header>
 
@@ -60,6 +64,16 @@
       </div>
     </section>
 
+    <!-- Search and Filter Bar -->
+    <div class="flex flex-col sm:flex-row gap-3 mb-4">
+      <input type="text" id="searchInput" oninput="filterData()" placeholder="🔍 ค้นหาชื่อโครงการ, ผู้รับเหมา หรือเบอร์โทร..." class="bg-slate-900 border border-slate-700 text-xs rounded-lg px-3.5 py-2.5 text-slate-200 placeholder-slate-500 focus:outline-none focus:border-amber-400 flex-1">
+      <select id="tierFilter" onchange="filterData()" class="bg-slate-900 border border-slate-700 text-xs rounded-lg px-3.5 py-2.5 text-slate-200 focus:outline-none focus:border-amber-400">
+        <option value="ALL">📌 แสดงคะแนนทุกระดับ</option>
+        <option value="HOT">🔥 เฉพาะโอกาสสูง (HOT 80+)</option>
+        <option value="WARM">⚡ ระดับปานกลาง (WARM)</option>
+      </select>
+    </div>
+
     <!-- Table Section -->
     <div class="overflow-x-auto bg-slate-900 border border-slate-800 rounded-xl shadow-2xl">
       <table class="w-full text-left text-sm text-slate-300">
@@ -71,12 +85,13 @@
             <th class="px-4 py-3.5 text-right">งบประมาณ</th>
             <th class="px-4 py-3.5 text-center">คะแนน</th>
             <th class="px-4 py-3.5 text-center">AI ผู้ช่วยขาย</th>
-            <th class="px-4 py-3.5 text-center min-w-[170px]">สถานะการโทร</th>
+            <th class="px-4 py-3.5 text-center min-w-[150px]">สถานะการโทร</th>
+            <th class="px-4 py-3.5 min-w-[220px]">บันทึกการคุย (Sales Note)</th>
           </tr>
         </thead>
         <tbody id="tableBody" class="divide-y divide-slate-800">
           <tr>
-            <td colspan="7" class="text-center py-10 text-slate-500">กำลังเชื่อมต่อฐานข้อมูล...</td>
+            <td colspan="8" class="text-center py-10 text-slate-500">กำลังเชื่อมต่อฐานข้อมูล...</td>
           </tr>
         </tbody>
       </table>
@@ -119,11 +134,9 @@
   </div>
 
   <script>
-    // ========================================================
-    // ลิงก์ Render API ปลอดภัย (เปลี่ยนเป็นลิงก์ของคุณถ้าชื่อไม่ตรงกัน)
-    // ========================================================
     const API_BASE_URL = "https://rjs-lead-api.onrender.com"; 
-    let leadList = [];
+    let allLeads = [];
+    let displayedLeads = [];
 
     async function loadData() {
       try {
@@ -131,15 +144,37 @@
         const result = await res.json();
         
         if (result.status === "success") {
-          leadList = result.data || [];
-          renderDashboard();
+          allLeads = result.data || [];
+          filterData();
         }
       } catch (err) {
         console.error("API Error:", err);
         document.getElementById("tableBody").innerHTML = `
-          <tr><td colspan="7" class="text-center py-10 text-rose-400">กำลังปลุกเซิร์ฟเวอร์ความปลอดภัย (กรุณารอประมาณ 30 วินาที แล้วรีเฟรชใหม่)...</td></tr>
+          <tr><td colspan="8" class="text-center py-10 text-rose-400">กำลังเชื่อมต่อเซิร์ฟเวอร์ความปลอดภัย (กรุณารอ 30 วินาทีแล้วรีเฟรช)...</td></tr>
         `;
       }
+    }
+
+    function filterData() {
+      const search = document.getElementById("searchInput").value.toLowerCase();
+      const tier = document.getElementById("tierFilter").value;
+
+      displayedLeads = allLeads.filter(p => {
+        const name = (p.project_name || "").toLowerCase();
+        const contractor = (p.contractor_name || "").toLowerCase();
+        const phone = (p.contractor_phone || "").toLowerCase();
+        const opp = p.opportunities?.[0] || {};
+        const score = opp.opportunity_score || 0;
+
+        const matchSearch = name.includes(search) || contractor.includes(search) || phone.includes(search);
+        let matchTier = true;
+        if (tier === "HOT") matchTier = score >= 80;
+        if (tier === "WARM") matchTier = score < 80;
+
+        return matchSearch && matchTier;
+      });
+
+      renderDashboard();
     }
 
     async function updateStatus(opportunityId, newStatus) {
@@ -155,13 +190,33 @@
       }
     }
 
+    async function saveNote(opportunityId, noteText, btnElement) {
+      const originalText = btnElement.innerText;
+      btnElement.innerText = "⏳...";
+      btnElement.disabled = true;
+
+      try {
+        await fetch(`${API_BASE_URL}/api/update-note`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ opportunity_id: opportunityId, notes: noteText })
+        });
+        btnElement.innerText = "✓";
+        setTimeout(() => { btnElement.innerText = "เซฟ"; btnElement.disabled = false; }, 1500);
+      } catch (err) {
+        alert("เกิดข้อผิดพลาดในการบันทึกโน้ต: " + err.message);
+        btnElement.innerText = originalText;
+        btnElement.disabled = false;
+      }
+    }
+
     async function syncLiveLeads() {
       const btn = document.getElementById("syncBtn");
       const icon = document.getElementById("syncIcon");
       const text = document.getElementById("syncText");
 
       icon.classList.add("animate-spin-custom");
-      text.innerText = "กำลังค้นหาโครงการ...";
+      text.innerText = "กำลังค้นหา...";
       btn.disabled = true;
 
       try {
@@ -179,8 +234,37 @@
       }
     }
 
+    function exportToExcel() {
+      if (allLeads.length === 0) {
+        alert("ไม่มีข้อมูลสำหรับ Export");
+        return;
+      }
+
+      const rows = allLeads.map((p, idx) => {
+        const opp = p.opportunities?.[0] || {};
+        const note = opp.score_reasons?.sales_note || "";
+        return {
+          "ลำดับ": idx + 1,
+          "ชื่อโครงการ": p.project_name,
+          "ประเภทโครงการ": p.project_type,
+          "บริษัทผู้รับเหมา": p.contractor_name || "-",
+          "เบอร์โทรศัพท์": p.contractor_phone || "-",
+          "งบประมาณ (บาท)": p.total_budget || 0,
+          "คะแนนโอกาสขาย (0-100)": opp.opportunity_score || 50,
+          "สถานะการติดตาม": opp.lead_status || "ยังไม่โทร",
+          "สินค้าที่แนะนำ": opp.recommended_products || "-",
+          "บันทึกการคุย (Sales Note)": note
+        };
+      });
+
+      const worksheet = XLSX.utils.json_to_sheet(rows);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Leads_Summary");
+      XLSX.writeFile(workbook, `RJSE_Sales_Leads_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    }
+
     function openAIModal(index) {
-      const p = leadList[index];
+      const p = displayedLeads[index];
       if (!p) return;
 
       const opp = p.opportunities?.[0] || {};
@@ -205,12 +289,12 @@
     }
 
     function renderDashboard() {
-      const total = leadList.length;
+      const total = allLeads.length;
       let hotCount = 0;
       let uncalledCount = 0;
       let interestedCount = 0;
 
-      leadList.forEach(p => {
+      allLeads.forEach(p => {
         const opp = p.opportunities?.[0];
         if (opp) {
           if (opp.opportunity_score >= 80) hotCount++;
@@ -225,15 +309,16 @@
       document.getElementById("metric-interested").innerText = `${interestedCount} รายการ`;
 
       const tbody = document.getElementById("tableBody");
-      if (leadList.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" class="text-center py-10 text-slate-500">ไม่มีรายการในฐานข้อมูล</td></tr>`;
+      if (displayedLeads.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" class="text-center py-10 text-slate-500">ไม่พบรายการที่ตรงกับเงื่อนไขการค้นหา</td></tr>`;
         return;
       }
 
-      tbody.innerHTML = leadList.map((p, idx) => {
+      tbody.innerHTML = displayedLeads.map((p, idx) => {
         const opp = p.opportunities?.[0] || {};
         const score = opp.opportunity_score || 50;
         const currentStatus = opp.lead_status || "ยังไม่โทร";
+        const currentNote = opp.score_reasons?.sales_note || "";
 
         let scoreBadge = "bg-amber-950 text-amber-400 border border-amber-800";
         if (score >= 80) scoreBadge = "bg-rose-950 text-rose-400 border border-rose-800 font-bold";
@@ -249,7 +334,6 @@
               <div class="text-amber-300 font-medium">${p.contractor_name || '-'}</div>
               <div class="text-xs text-slate-400 mt-1 flex items-center gap-2">
                 <span>☎️ <a href="tel:${p.contractor_phone}" class="hover:underline text-slate-200">${p.contractor_phone || '-'}</a></span>
-                ${p.contractor_email ? `<span class="text-slate-500">|</span> <span>✉️ ${p.contractor_email}</span>` : ''}
               </div>
             </td>
             <td class="px-4 py-3 text-right font-semibold text-slate-200 whitespace-nowrap">
@@ -273,6 +357,14 @@
                 <option value="นัดเข้าพบ" ${currentStatus === 'นัดเข้าพบ' ? 'selected' : ''}>🏢 นัดเข้าพบ</option>
                 <option value="ไม่สนใจ" ${currentStatus === 'ไม่สนใจ' ? 'selected' : ''}>🔴 ไม่สนใจ</option>
               </select>
+            </td>
+            <td class="px-4 py-3">
+              <div class="flex items-center gap-1.5">
+                <input type="text" id="note_${opp.id}" value="${currentNote}" placeholder="พิมพ์โน้ตการโทร..." class="bg-slate-950 border border-slate-700 text-xs rounded-lg px-2.5 py-1.5 text-slate-200 placeholder-slate-600 focus:outline-none focus:border-amber-400 flex-1">
+                <button onclick="saveNote('${opp.id}', document.getElementById('note_${opp.id}').value, this)" class="bg-slate-800 hover:bg-slate-700 text-amber-400 border border-slate-700 text-xs px-2.5 py-1.5 rounded-lg transition font-medium">
+                  เซฟ
+                </button>
+              </div>
             </td>
           </tr>
         `;

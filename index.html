@@ -6,16 +6,13 @@
   <title>RJSE AI Sales Intelligence — บจก. รุ่งจรัสแสงการไฟฟ้า</title>
   
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- SheetJS สำหรับ Export เป็นไฟล์ Excel คุณภาพสูง -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <!-- Chart.js สำหรับกราฟวิเคราะห์ยอดขาย -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- Leaflet Map CSS & JS สำหรับแผนที่ -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.gstatic.com">
   <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
   <style>
@@ -30,7 +27,6 @@
 <body class="bg-slate-950 text-slate-100 min-h-screen">
 
   <div class="max-w-[1600px] mx-auto px-4 py-8">
-    <!-- Header Section -->
     <header class="flex flex-col md:flex-row md:items-center justify-between pb-6 border-b border-slate-800 gap-4">
       <div>
         <div class="flex items-center gap-3">
@@ -40,14 +36,13 @@
         <p class="text-slate-400 text-sm mt-1">ระบบชี้เป้าและติดตามโอกาสงานระบบไฟฟ้า — บจก. รุ่งจรัสแสงการไฟฟ้า</p>
       </div>
       
-      <!-- Action Controls -->
       <div class="flex flex-wrap items-center gap-2.5">
         <span class="inline-flex items-center gap-1.5 bg-emerald-950 text-emerald-400 border border-emerald-800 text-xs px-3 py-2 rounded-lg">
-          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Cloud Live
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Production Live
         </span>
         <button onclick="openNewLeadModal()" class="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-semibold px-3.5 py-2 rounded-lg shadow transition">
           <span>➕</span>
-          <span>เพิ่มโครงการใหม่</span>
+          <span>เพิ่มโครงการจริง</span>
         </button>
         <button onclick="exportToExcel()" class="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold px-3.5 py-2 rounded-lg shadow transition">
           <span>📊</span>
@@ -55,12 +50,11 @@
         </button>
         <button id="syncBtn" onclick="syncLiveLeads()" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold px-4 py-2 rounded-lg shadow transition">
           <span id="syncIcon">🔄</span>
-          <span id="syncText">ดึงโครงการใหม่</span>
+          <span id="syncText">อัปเดตข้อมูล</span>
         </button>
       </div>
     </header>
 
-    <!-- KPI Summary Cards & Pipeline Chart -->
     <section class="grid grid-cols-1 lg:grid-cols-3 gap-6 my-6">
       <div class="lg:col-span-2 grid grid-cols-2 gap-4 content-start">
         <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
@@ -89,7 +83,6 @@
       </div>
     </section>
 
-    <!-- View Switcher & Search Filter Controls -->
     <div class="flex flex-col sm:flex-row justify-between gap-3 mb-4">
       <div class="flex flex-1 gap-2">
         <input type="text" id="searchInput" oninput="filterData()" placeholder="🔍 ค้นหาชื่อโครงการ, ผู้รับเหมา หรือเบอร์โทร..." class="bg-slate-900 border border-slate-700 text-xs rounded-lg px-3.5 py-2 text-slate-200 placeholder-slate-500 focus:outline-none focus:border-amber-400 flex-1">
@@ -110,7 +103,6 @@
       </div>
     </div>
 
-    <!-- Table View Section -->
     <div id="tableViewSection" class="overflow-x-auto bg-slate-900 border border-slate-800 rounded-xl shadow-2xl">
       <table class="w-full text-left text-sm text-slate-300">
         <thead class="bg-slate-950 text-slate-400 uppercase text-xs border-b border-slate-800">
@@ -133,10 +125,9 @@
       </table>
     </div>
 
-    <!-- Map View Section -->
     <div id="mapViewSection" class="hidden bg-slate-900 border border-slate-800 p-4 rounded-xl shadow-2xl">
       <div class="flex items-center justify-between mb-3 px-1">
-        <span class="text-xs text-slate-400">💡 คลิกที่หมุดบนแผนที่เพื่อดูข้อมูลผู้รับเหมาและเบอร์โทร</span>
+        <span class="text-xs text-slate-400">💡 หมุดแสดงพิกัดโครงการจริงในระบบ</span>
         <div class="flex items-center gap-4 text-xs">
           <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-rose-500"></span> 🔥 โอกาสสูง (HOT)</span>
           <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-amber-500"></span> ⚡ ปานกลาง (WARM)</span>
@@ -146,18 +137,18 @@
     </div>
   </div>
 
-  <!-- Modal: ฟอร์มเพิ่มโครงการใหม่ (Manual Entry Modal) -->
+  <!-- Modal Add Project -->
   <div id="newLeadModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50 overflow-y-auto">
     <div class="bg-slate-900 border border-slate-700 w-full max-w-lg rounded-2xl p-6 shadow-2xl relative my-8">
       <button onclick="closeNewLeadModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-xl">✕</button>
       <div class="flex items-center gap-2 text-amber-400 font-bold text-lg border-b border-slate-800 pb-3">
         <span>➕</span>
-        <span>เพิ่มโครงการและผู้รับเหมาใหม่</span>
+        <span>เพิ่มโครงการและข้อมูลผู้รับเหมาจริง</span>
       </div>
       <form onsubmit="submitNewLead(event)" class="mt-4 space-y-3.5 text-xs">
         <div>
-          <label class="block text-slate-400 mb-1">ชื่อโครงการ / งานติดตั้ง *</label>
-          <input type="text" id="inpProjName" required placeholder="เช่น งานก่อสร้างอาคารชุดพักอาศัย 8 ชั้น" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-amber-400">
+          <label class="block text-slate-400 mb-1">ชื่อโครงการ / งานติดตั้งจริง *</label>
+          <input type="text" id="inpProjName" required placeholder="ระบุชื่อโครงการจริง" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-amber-400">
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
@@ -171,32 +162,32 @@
           </div>
           <div>
             <label class="block text-slate-400 mb-1">งบประมาณงานระบบ (บาท) *</label>
-            <input type="number" id="inpBudget" required placeholder="เช่น 5000000" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-amber-400">
+            <input type="number" id="inpBudget" required placeholder="ตัวเลขงบประมาณจริง" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-amber-400">
           </div>
         </div>
         <div>
           <label class="block text-slate-400 mb-1">ชื่อบริษัทผู้รับเหมา / หจก. *</label>
-          <input type="text" id="inpContractor" required placeholder="เช่น บริษัท เจริญเอ็นจิเนียริ่ง จำกัด" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-amber-400">
+          <input type="text" id="inpContractor" required placeholder="ระบุชื่อผู้รับเหมาจริง" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-amber-400">
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="block text-slate-400 mb-1">เบอร์โทรศัพท์ติดต่อ *</label>
-            <input type="tel" id="inpPhone" required placeholder="เช่น 081-234-5678" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-amber-400">
+            <input type="tel" id="inpPhone" required placeholder="เบอร์โทรผู้รับเหมา" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-amber-400">
           </div>
           <div>
             <label class="block text-slate-400 mb-1">อีเมลผู้รับเหมา (ถ้ามี)</label>
-            <input type="email" id="inpEmail" placeholder="contractor@email.com" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-amber-400">
+            <input type="email" id="inpEmail" placeholder="อีเมลติดต่อ" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-amber-400">
           </div>
         </div>
         <div class="pt-3 flex justify-end gap-2 border-t border-slate-800">
           <button type="button" onclick="closeNewLeadModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-lg transition">ยกเลิก</button>
-          <button type="submit" id="submitLeadBtn" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2 rounded-lg transition">บันทึกโครงการ</button>
+          <button type="submit" id="submitLeadBtn" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2 rounded-lg transition">บันทึกข้อมูลจริง</button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- AI Modal: ช่วยสรุปสเปกท่อ & ร่างอีเมลเสนอราคา -->
+  <!-- AI Modal -->
   <div id="aiModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50 overflow-y-auto">
     <div class="bg-slate-900 border border-slate-700 w-full max-w-3xl rounded-2xl p-6 shadow-2xl relative my-8">
       <button onclick="closeAIModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-xl">✕</button>
@@ -245,14 +236,6 @@
     let mapMarkers = [];
     let pipelineChartInstance = null;
 
-    const coordinateList = [
-      { lat: 13.7563, lng: 100.5018 },
-      { lat: 13.7234, lng: 100.5284 },
-      { lat: 13.8200, lng: 100.5600 },
-      { lat: 13.3611, lng: 100.9847 },
-      { lat: 13.5991, lng: 100.6057 }
-    ];
-
     async function loadData() {
       try {
         const res = await fetch(`${API_BASE_URL}/api/projects`);
@@ -264,7 +247,7 @@
       } catch (err) {
         console.error("API Error:", err);
         document.getElementById("tableBody").innerHTML = `
-          <tr><td colspan="8" class="text-center py-10 text-rose-400">กำลังเชื่อมต่อเซิร์ฟเวอร์ความปลอดภัย (กรุณารอ 30 วินาทีแล้วรีเฟรช)...</td></tr>
+          <tr><td colspan="8" class="text-center py-10 text-rose-400">กำลังเชื่อมต่อฐานข้อมูล...</td></tr>
         `;
       }
     }
@@ -304,7 +287,7 @@
       } catch (err) {
         alert("เกิดข้อผิดพลาด: " + err.message);
       } finally {
-        btn.innerText = "บันทึกโครงการ";
+        btn.innerText = "บันทึกข้อมูลจริง";
         btn.disabled = false;
       }
     }
@@ -331,7 +314,7 @@
 
     function initOrUpdateMap() {
       if (!mapInstance) {
-        mapInstance = L.map('map').setView([13.7563, 100.5018], 11);
+        mapInstance = L.map('map').setView([13.7563, 100.5018], 10);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
           maxZoom: 18,
           attribution: '© OpenStreetMap'
@@ -342,33 +325,6 @@
 
       mapMarkers.forEach(m => mapInstance.removeLayer(m));
       mapMarkers = [];
-
-      displayedLeads.forEach((p, idx) => {
-        const coord = coordinateList[idx % coordinateList.length];
-        const opp = p.opportunities?.[0] || {};
-        const isHot = (opp.opportunity_score || 0) >= 80;
-
-        const markerColor = isHot ? "#f43f5e" : "#f59e0b";
-        const customIcon = L.divIcon({
-          className: 'custom-pin',
-          html: `<div style="background-color: ${markerColor}; width: 18px; height: 18px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 10px rgba(0,0,0,0.5);"></div>`,
-          iconSize: [18, 18],
-          iconAnchor: [9, 9]
-        });
-
-        const popupContent = `
-          <div style="font-family: 'Prompt', sans-serif; font-size: 12px; min-width: 200px;">
-            <div style="font-weight: bold; color: #f59e0b; margin-bottom: 4px;">${p.project_name}</div>
-            <div style="color: #cbd5e1; margin-bottom: 2px;">🏢 ${p.contractor_name || '-'}</div>
-            <div style="color: #94a3b8; margin-bottom: 6px;">💰 ฿${(p.total_budget || 0).toLocaleString()}</div>
-            <div style="margin-bottom: 8px;"><span style="background: ${isHot ? '#881337' : '#78350f'}; color: ${isHot ? '#fda4af' : '#fde68a'}; padding: 2px 8px; border-radius: 9999px; font-weight: bold;">คะแนน: ${opp.opportunity_score || 50}/100</span></div>
-            <a href="tel:${p.contractor_phone}" style="display: block; text-align: center; background: #2563eb; color: white; padding: 4px; border-radius: 6px; text-decoration: none; font-weight: bold;">☎️ โทร ${p.contractor_phone || '-'}</a>
-          </div>
-        `;
-
-        const marker = L.marker([coord.lat, coord.lng], { icon: customIcon }).addTo(mapInstance).bindPopup(popupContent);
-        mapMarkers.push(marker);
-      });
     }
 
     function updateChart(uncalled, called, interested, meeting, rejected) {
@@ -420,9 +376,6 @@
       });
 
       renderDashboard();
-      if (mapInstance && !document.getElementById("mapViewSection").classList.contains("hidden")) {
-        initOrUpdateMap();
-      }
     }
 
     async function updateStatus(opportunityId, newStatus) {
@@ -452,7 +405,7 @@
         btnElement.innerText = "✓";
         setTimeout(() => { btnElement.innerText = "เซฟ"; btnElement.disabled = false; }, 1500);
       } catch (err) {
-        alert("เกิดข้อผิดพลาดในการบันทึกโน้ต: " + err.message);
+        alert("เกิดข้อผิดพลาด: " + err.message);
         btnElement.innerText = originalText;
         btnElement.disabled = false;
       }
@@ -464,31 +417,28 @@
       const text = document.getElementById("syncText");
 
       icon.classList.add("animate-spin-custom");
-      text.innerText = "กำลังค้นหา...";
+      text.innerText = "กำลังตรวจสอบ...";
       btn.disabled = true;
 
       try {
-        const res = await fetch(`${API_BASE_URL}/api/sync-leads`, { method: "POST" });
-        const result = await res.json();
+        await fetch(`${API_BASE_URL}/api/sync-leads`, { method: "POST" });
         await loadData();
-        text.innerText = result.new_count > 0 ? `พบโครงการใหม่ +${result.new_count} รายการ` : "ข้อมูลเป็นปัจจุบันแล้ว";
+        text.innerText = "ข้อมูลเป็นปัจจุบันแล้ว";
       } catch (e) {
-        text.innerText = "ดึงข้อมูลไม่สำเร็จ";
+        text.innerText = "เชื่อมต่อไม่สำเร็จ";
       } finally {
         icon.classList.remove("animate-spin-custom");
         btn.disabled = false;
-        setTimeout(() => { text.innerText = "ดึงโครงการใหม่"; }, 3500);
+        setTimeout(() => { text.innerText = "อัปเดตข้อมูล"; }, 3000);
       }
     }
 
-    // ฟังก์ชัน Export Excel ฉบับจัดระยะเว้นขอบเซลล์ (Cell Padding) สวยงามสำหรับกระดาษ A4 แนวนอน
     function exportToExcel() {
       if (allLeads.length === 0) {
-        alert("ไม่มีข้อมูลสำหรับ Export");
+        alert("ไม่มีข้อมูลสำหรับ Export (กรุณาเพิ่มโครงการจริงก่อน)");
         return;
       }
 
-      // 1. หัวกระดาษและแถวข้อมูลพร้อมเว้นช่องไฟซ้าย-ขวา ไม่ให้ตัวหนังสือติดเส้น
       const wsData = [
         [" บริษัท รุ่งจรัสแสงการไฟฟ้า จำกัด (RJSE AI Sales Intelligence) "],
         [" รายงานติดตามโอกาสการขายและรายชื่อโครงการ (Sales Lead Pipeline Report) — ออกรายงานเมื่อ: " + new Date().toLocaleDateString('th-TH') + " "],
@@ -529,7 +479,6 @@
         ]);
       });
 
-      // แถวสรุปรวมมูลค่างบประมาณท้ายตาราง
       wsData.push([
         " รวมมูลค่างบประมาณโครงการทั้งหมด ", "", "", "", "",
         totalBudget, "", "", "", ""
@@ -537,21 +486,19 @@
 
       const worksheet = XLSX.utils.aoa_to_sheet(wsData);
 
-      // 2. กำหนดความกว้างคอลัมน์แบบโปร่งสบาย ตัวอักษรไม่เบียดขอบ
       worksheet["!cols"] = [
-        { wch: 8 },   // ลำดับ
-        { wch: 36 },  // ชื่อโครงการ
-        { wch: 24 },  // ประเภท
-        { wch: 28 },  // บริษัทผู้รับเหมา
-        { wch: 16 },  // เบอร์โทรศัพท์
-        { wch: 20 },  // งบประมาณ
-        { wch: 10 },  // คะแนน
-        { wch: 10 },  // ระดับ
-        { wch: 16 },  // สถานะ
-        { wch: 34 }   // บันทึกการคุย
+        { wch: 8 },
+        { wch: 36 },
+        { wch: 24 },
+        { wch: 28 },
+        { wch: 16 },
+        { wch: 20 },
+        { wch: 10 },
+        { wch: 10 },
+        { wch: 16 },
+        { wch: 34 }
       ];
 
-      // รวมเซลล์หัวรายงานและแถวสรุป
       worksheet["!merges"] = [
         { s: { r: 0, c: 0 }, e: { r: 0, c: 9 } },
         { s: { r: 1, c: 0 }, e: { r: 1, c: 9 } },
@@ -655,7 +602,7 @@
 
       const tbody = document.getElementById("tableBody");
       if (displayedLeads.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8" class="text-center py-10 text-slate-500">ไม่พบรายการที่ตรงกับเงื่อนไขการค้นหา</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" class="text-center py-10 text-slate-500">ยังไม่มีข้อมูลโครงการ (กดปุ่ม "+ เพิ่มโครงการจริง" เพื่อเริ่มบันทึก)</td></tr>`;
         return;
       }
 

@@ -6,13 +6,16 @@
   <title>RJSE AI Sales Intelligence — บจก. รุ่งจรัสแสงการไฟฟ้า</title>
   
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- SheetJS สำหรับ Export เป็นไฟล์ Excel คุณภาพสูง -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <!-- Chart.js สำหรับกราฟวิเคราะห์ยอดขาย -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Leaflet Map CSS & JS สำหรับแผนที่ -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
   <style>
@@ -27,6 +30,7 @@
 <body class="bg-slate-950 text-slate-100 min-h-screen">
 
   <div class="max-w-[1600px] mx-auto px-4 py-8">
+    <!-- Header Section -->
     <header class="flex flex-col md:flex-row md:items-center justify-between pb-6 border-b border-slate-800 gap-4">
       <div>
         <div class="flex items-center gap-3">
@@ -36,6 +40,7 @@
         <p class="text-slate-400 text-sm mt-1">ระบบชี้เป้าและติดตามโอกาสงานระบบไฟฟ้า — บจก. รุ่งจรัสแสงการไฟฟ้า</p>
       </div>
       
+      <!-- Action Controls -->
       <div class="flex flex-wrap items-center gap-2.5">
         <span class="inline-flex items-center gap-1.5 bg-emerald-950 text-emerald-400 border border-emerald-800 text-xs px-3 py-2 rounded-lg">
           <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Production Live
@@ -55,6 +60,7 @@
       </div>
     </header>
 
+    <!-- KPI Summary Cards & Pipeline Chart -->
     <section class="grid grid-cols-1 lg:grid-cols-3 gap-6 my-6">
       <div class="lg:col-span-2 grid grid-cols-2 gap-4 content-start">
         <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
@@ -83,6 +89,7 @@
       </div>
     </section>
 
+    <!-- View Switcher & Search Filter Controls -->
     <div class="flex flex-col sm:flex-row justify-between gap-3 mb-4">
       <div class="flex flex-1 gap-2">
         <input type="text" id="searchInput" oninput="filterData()" placeholder="🔍 ค้นหาชื่อโครงการ, ผู้รับเหมา หรือเบอร์โทร..." class="bg-slate-900 border border-slate-700 text-xs rounded-lg px-3.5 py-2 text-slate-200 placeholder-slate-500 focus:outline-none focus:border-amber-400 flex-1">
@@ -103,6 +110,7 @@
       </div>
     </div>
 
+    <!-- Table View Section -->
     <div id="tableViewSection" class="overflow-x-auto bg-slate-900 border border-slate-800 rounded-xl shadow-2xl">
       <table class="w-full text-left text-sm text-slate-300">
         <thead class="bg-slate-950 text-slate-400 uppercase text-xs border-b border-slate-800">
@@ -125,6 +133,7 @@
       </table>
     </div>
 
+    <!-- Map View Section -->
     <div id="mapViewSection" class="hidden bg-slate-900 border border-slate-800 p-4 rounded-xl shadow-2xl">
       <div class="flex items-center justify-between mb-3 px-1">
         <span class="text-xs text-slate-400">💡 หมุดแสดงพิกัดโครงการจริงในระบบ</span>
@@ -137,7 +146,7 @@
     </div>
   </div>
 
-  <!-- Modal Add Project -->
+  <!-- Modal: ฟอร์มเพิ่มโครงการใหม่ (Manual Entry Modal) -->
   <div id="newLeadModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50 overflow-y-auto">
     <div class="bg-slate-900 border border-slate-700 w-full max-w-lg rounded-2xl p-6 shadow-2xl relative my-8">
       <button onclick="closeNewLeadModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-xl">✕</button>
@@ -325,6 +334,34 @@
 
       mapMarkers.forEach(m => mapInstance.removeLayer(m));
       mapMarkers = [];
+
+      // ปักหมุดเฉพาะโครงการที่มีการบันทึกพิกัดจริง
+      displayedLeads.forEach(p => {
+        if (p.latitude && p.longitude) {
+          const opp = p.opportunities?.[0] || {};
+          const isHot = (opp.opportunity_score || 0) >= 80;
+          const markerColor = isHot ? "#f43f5e" : "#f59e0b";
+          
+          const customIcon = L.divIcon({
+            className: 'custom-pin',
+            html: `<div style="background-color: ${markerColor}; width: 18px; height: 18px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 10px rgba(0,0,0,0.5);"></div>`,
+            iconSize: [18, 18],
+            iconAnchor: [9, 9]
+          });
+
+          const popupContent = `
+            <div style="font-family: 'Prompt', sans-serif; font-size: 12px; min-width: 200px;">
+              <div style="font-weight: bold; color: #f59e0b; margin-bottom: 4px;">${p.project_name}</div>
+              <div style="color: #cbd5e1; margin-bottom: 2px;">🏢 ${p.contractor_name || '-'}</div>
+              <div style="color: #94a3b8; margin-bottom: 6px;">💰 ฿${(p.total_budget || 0).toLocaleString()}</div>
+              <a href="tel:${p.contractor_phone}" style="display: block; text-align: center; background: #2563eb; color: white; padding: 4px; border-radius: 6px; text-decoration: none; font-weight: bold;">☎️ โทร ${p.contractor_phone || '-'}</a>
+            </div>
+          `;
+
+          const marker = L.marker([p.latitude, p.longitude], { icon: customIcon }).addTo(mapInstance).bindPopup(popupContent);
+          mapMarkers.push(marker);
+        }
+      });
     }
 
     function updateChart(uncalled, called, interested, meeting, rejected) {
@@ -376,6 +413,9 @@
       });
 
       renderDashboard();
+      if (mapInstance && !document.getElementById("mapViewSection").classList.contains("hidden")) {
+        initOrUpdateMap();
+      }
     }
 
     async function updateStatus(opportunityId, newStatus) {

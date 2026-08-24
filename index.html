@@ -8,6 +8,8 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- SheetJS สำหรับ Export Excel -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <!-- Chart.js สำหรับกราฟวิเคราะห์ยอดขาย -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <!-- Leaflet Map CSS & JS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -54,23 +56,34 @@
       </div>
     </header>
 
-    <!-- KPI Summary Cards -->
-    <section class="grid grid-cols-2 lg:grid-cols-4 gap-4 my-6">
-      <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
-        <span class="text-slate-400 text-xs uppercase tracking-wider">โครงการทั้งหมด</span>
-        <div id="metric-total" class="text-2xl font-bold text-white mt-1">0 รายการ</div>
+    <!-- KPI Summary Cards & Analytics Chart Section -->
+    <section class="grid grid-cols-1 lg:grid-cols-3 gap-6 my-6">
+      <!-- Left: KPI Cards (2x2) -->
+      <div class="lg:col-span-2 grid grid-cols-2 gap-4 content-start">
+        <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
+          <span class="text-slate-400 text-xs uppercase tracking-wider">โครงการทั้งหมด</span>
+          <div id="metric-total" class="text-2xl font-bold text-white mt-1">0 รายการ</div>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
+          <span class="text-slate-400 text-xs uppercase tracking-wider">🔥 โอกาสขายสูง (HOT)</span>
+          <div id="metric-hot" class="text-2xl font-bold text-rose-400 mt-1">0 รายการ</div>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
+          <span class="text-slate-400 text-xs uppercase tracking-wider">⏳ ยังไม่โทร</span>
+          <div id="metric-uncalled" class="text-2xl font-bold text-amber-400 mt-1">0 รายการ</div>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
+          <span class="text-slate-400 text-xs uppercase tracking-wider">🟢 ลูกค้าสนใจ</span>
+          <div id="metric-interested" class="text-2xl font-bold text-emerald-400 mt-1">0 รายการ</div>
+        </div>
       </div>
-      <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
-        <span class="text-slate-400 text-xs uppercase tracking-wider">🔥 โอกาสขายสูง (HOT)</span>
-        <div id="metric-hot" class="text-2xl font-bold text-rose-400 mt-1">0 รายการ</div>
-      </div>
-      <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
-        <span class="text-slate-400 text-xs uppercase tracking-wider">⏳ ยังไม่โทร</span>
-        <div id="metric-uncalled" class="text-2xl font-bold text-amber-400 mt-1">0 รายการ</div>
-      </div>
-      <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
-        <span class="text-slate-400 text-xs uppercase tracking-wider">🟢 ลูกค้าสนใจ</span>
-        <div id="metric-interested" class="text-2xl font-bold text-emerald-400 mt-1">0 รายการ</div>
+
+      <!-- Right: Pipeline Chart -->
+      <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl flex flex-col items-center justify-center">
+        <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 self-start">📈 สัดส่วนสถานะการติดตาม (Pipeline Status)</div>
+        <div class="w-full h-44 flex items-center justify-center">
+          <canvas id="pipelineChart"></canvas>
+        </div>
       </div>
     </section>
 
@@ -133,29 +146,42 @@
   </div>
 
   <!-- AI Modal -->
-  <div id="aiModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
-    <div class="bg-slate-900 border border-slate-700 w-full max-w-2xl rounded-2xl p-6 shadow-2xl relative">
+  <div id="aiModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50 overflow-y-auto">
+    <div class="bg-slate-900 border border-slate-700 w-full max-w-3xl rounded-2xl p-6 shadow-2xl relative my-8">
       <button onclick="closeAIModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-xl">✕</button>
       
       <div class="flex items-center gap-2 text-amber-400 font-bold text-lg border-b border-slate-800 pb-3">
-        <span>🤖</span>
-        <span>AI Sales Assistant — บทวิเคราะห์และสคริปต์เปิดการขาย</span>
+        <span>⚡</span>
+        <span>AI Quotation & Pitch Assistant — บจก. รุ่งจรัสแสงการไฟฟ้า</span>
       </div>
 
       <div class="mt-4 space-y-4 text-sm text-slate-300">
-        <div>
-          <span class="text-xs text-slate-500 uppercase tracking-wider block">โครงการ</span>
-          <div id="modalProjName" class="font-semibold text-white mt-0.5"></div>
+        <div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800 flex justify-between items-center">
+          <div>
+            <span class="text-xs text-slate-500 uppercase tracking-wider block">โครงการ</span>
+            <div id="modalProjName" class="font-semibold text-white mt-0.5"></div>
+            <div id="modalContractor" class="text-xs text-amber-400 mt-1"></div>
+          </div>
+          <div id="modalScoreBadge" class="text-right"></div>
         </div>
 
         <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
-          <div class="text-amber-300 font-semibold text-xs uppercase mb-1.5">📦 สินค้าและสเปกท่อที่มีแนวโน้มเหมาะสม:</div>
-          <div id="modalProducts" class="text-slate-200"></div>
+          <div class="text-amber-300 font-semibold text-xs uppercase mb-2 flex items-center gap-1.5">
+            <span>📦</span> รายการท่อร้อยสายไฟและอุปกรณ์ฟิตติ้งที่ต้องเสนอ (Suggested BOQ):
+          </div>
+          <div id="modalProducts" class="text-slate-200 text-xs leading-relaxed space-y-1"></div>
         </div>
 
-        <div class="bg-blue-950/40 p-4 rounded-xl border border-blue-800/40">
-          <div class="text-cyan-300 font-semibold text-xs uppercase mb-1.5">📞 บทพูดแนะนำก่อนโทรหาจัดซื้อ/PM (Talking Points):</div>
-          <div id="modalScript" class="text-slate-200 leading-relaxed italic bg-slate-900/60 p-3 rounded-lg border border-slate-800"></div>
+        <div class="bg-blue-950/30 p-4 rounded-xl border border-blue-800/40">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-cyan-300 font-semibold text-xs uppercase flex items-center gap-1.5">
+              <span>✉️</span> ร่างข้อความอีเมล / ไลน์ เสนอราคางานโครงการ:
+            </span>
+            <button id="copyBtn" onclick="copyEmailScript()" class="bg-blue-600 hover:bg-blue-500 text-white text-xs px-3 py-1 rounded-md transition font-medium">
+              📋 คัดลอกข้อความ
+            </button>
+          </div>
+          <div id="modalScript" class="text-slate-200 text-xs leading-relaxed bg-slate-900/90 p-3.5 rounded-lg border border-slate-800 whitespace-pre-line font-mono"></div>
         </div>
       </div>
 
@@ -173,14 +199,14 @@
     let displayedLeads = [];
     let mapInstance = null;
     let mapMarkers = [];
+    let pipelineChartInstance = null;
 
-    // พิกัดเริ่มต้นสำหรับพื้นที่ในไทย
     const coordinateList = [
-      { lat: 13.7563, lng: 100.5018 }, // กทม. กลาง
-      { lat: 13.7234, lng: 100.5284 }, // สาทร / พระราม 3
-      { lat: 13.8200, lng: 100.5600 }, // จตุจักร / บางซื่อ
-      { lat: 13.3611, lng: 100.9847 }, // ชลบุรี
-      { lat: 13.5991, lng: 100.6057 }  // สมุทรปราการ
+      { lat: 13.7563, lng: 100.5018 },
+      { lat: 13.7234, lng: 100.5284 },
+      { lat: 13.8200, lng: 100.5600 },
+      { lat: 13.3611, lng: 100.9847 },
+      { lat: 13.5991, lng: 100.6057 }
     ];
 
     async function loadData() {
@@ -231,11 +257,9 @@
         setTimeout(() => { mapInstance.invalidateSize(); }, 200);
       }
 
-      // เคลียร์หมุดเดิม
       mapMarkers.forEach(m => mapInstance.removeLayer(m));
       mapMarkers = [];
 
-      // ปักหมุดโครงการ
       displayedLeads.forEach((p, idx) => {
         const coord = coordinateList[idx % coordinateList.length];
         const opp = p.opportunities?.[0] || {};
@@ -264,6 +288,35 @@
           .bindPopup(popupContent);
 
         mapMarkers.push(marker);
+      });
+    }
+
+    function updateChart(uncalled, called, interested, meeting, rejected) {
+      const ctx = document.getElementById('pipelineChart').getContext('2d');
+      if (pipelineChartInstance) {
+        pipelineChartInstance.destroy();
+      }
+
+      pipelineChartInstance = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: ['ยังไม่โทร', 'โทรแล้ว', 'ลูกค้าสนใจ', 'นัดเข้าพบ', 'ไม่สนใจ'],
+          datasets: [{
+            data: [uncalled, called, interested, meeting, rejected],
+            backgroundColor: ['#f59e0b', '#3b82f6', '#10b981', '#8b5cf6', '#ef4444'],
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'right',
+              labels: { boxWidth: 10, font: { family: 'Prompt', size: 10 }, color: '#94a3b8' }
+            }
+          }
+        }
       });
     }
 
@@ -385,18 +438,55 @@
       const opp = p.opportunities?.[0] || {};
       const projName = p.project_name || "";
       const contractor = p.contractor_name || "บริษัทคู่ค้า";
+      const score = opp.opportunity_score || 50;
 
       document.getElementById("modalProjName").innerText = projName;
-      document.getElementById("modalProducts").innerText = opp.recommended_products || "ท่อร้อยสายไฟ EMT/IMC, รางวายเวย์, อุปกรณ์ข้อต่อ Coupling/Connector";
+      document.getElementById("modalContractor").innerText = `🏢 ผู้รับเหมา: ${contractor} | ☎️ ${p.contractor_phone || '-'}`;
+      document.getElementById("modalScoreBadge").innerHTML = `
+        <span class="text-xs px-3 py-1 rounded-full font-bold ${score >= 80 ? 'bg-rose-950 text-rose-400 border border-rose-800' : 'bg-amber-950 text-amber-400 border border-amber-800'}">
+          ความเร่งด่วน: ${score}/100 (${opp.score_tier || 'WARM'})
+        </span>
+      `;
 
-      let script = `สวัสดีครับ ขอสายฝ่ายจัดซื้อหรือวิศวกรผู้ดูแลโครงการ "${projName}" ครับ... ผมติดต่อจาก บจก. รุ่งจรัสแสงการไฟฟ้า ทราบว่าทาง ${contractor} ได้เริ่มดำเนินงานในโครงการนี้ ทางเราเป็นตัวแทนจำหน่ายท่อร้อยสายไฟ มอก. (EMT, IMC, RSC) และรางวายเวย์ราคาตรงจากโรงงาน จึงขออนุญาตส่งตารางราคาและแคตตาล็อกเทียบสเปกเพื่อประกอบการจัดซื้อครับ`;
-      
-      if (p.project_type && (p.project_type.includes("โรงงาน") || p.project_type.includes("อุตสาหกรรม"))) {
-        script = `สวัสดีครับ ติดต่อฝ่ายจัดซื้อโครงการโรงงานครับ... ทางรุ่งจรัสแสงการไฟฟ้ามีสต็อกท่อหนา IMC/RSC สำหรับงานโรงงานอุตสาหกรรม พร้อมอุปกรณ์ข้อต่อกันน้ำและโคม High Bay LED มาตรฐาน มอก. ยินดีทำราคาโครงการพิเศษให้ทาง ${contractor} ครับ`;
-      }
+      let productDetails = `
+        <div>• <b>ท่อร้อยสายไฟหลัก:</b> ท่อ EMT (สำหรับภายในอาคาร/ฝ้า) และ ท่อ IMC/RSC (สำหรับงานแนวตั้ง/หม้อแปลง/ห้องเครื่อง)</div>
+        <div>• <b>อุปกรณ์ฟิตติ้ง & ข้อต่อ:</b> Connector EMT/IMC, Coupling, Locknut, Bushing, กล่องพักสาย Handy Box / Square Box</div>
+        <div>• <b>รางลำเลียงสายไฟ:</b> รางวายเวย์ (Wireway) ชุบกัลวาไนซ์ / รางเคเบิลแลดเดอร์ (Cable Ladder)</div>
+        <div>• <b>อุปกรณ์ตู้คอนโทรล:</b> ตู้สวิตช์บอร์ด MDB, เบรกเกอร์ MCCB/MCB, ระบบกราวด์และล่อฟ้า</div>
+      `;
+      document.getElementById("modalProducts").innerHTML = productDetails;
 
-      document.getElementById("modalScript").innerText = `"${script}"`;
+      const emailTemplate = `เรียน ฝ่ายจัดซื้อ / วิศวกรโครงการ (${contractor})
+เรื่อง ขออนุญาตนำเสนอราคาและเทียบสเปกอุปกรณ์ท่อร้อยสายไฟและตู้ไฟฟ้า โครงการ: ${projName}
+
+ตามที่ทาง ${contractor} กำลังดำเนินงานโครงการ "${projName}" ทางบริษัท รุ่งจรัสแสงการไฟฟ้า จำกัด ในฐานะผู้จัดจำหน่ายอุปกรณ์ไฟฟ้าโรงงานและท่อร้อยสายไฟมาตรฐาน มอก. (EMT, IMC, RSC, Flexible Conduit, รางวายเวย์ และข้อต่อฟิตติ้งครบวงจร) 
+
+ขออนุญาตนำเสนอราคาโครงการพิเศษเพื่อประกอบการพิจารณาจัดซื้อของทางโครงการครับ:
+1. ท่อร้อยสายไฟ มอก. คุณภาพมาตรฐาน (มีสต็อกพร้อมส่งเข้าหน้างาน)
+2. อุปกรณ์ฟิตติ้ง (Connector, Coupling, Locknut, Bushing) ครบชุด
+3. บริการจัดส่งด่วนตรงถึงไซต์งาน พร้อมเอกสารใบรับรองผลทดสอบ (Test Report)
+
+สามารถส่งรายการ BOQ หรือขนาดท่อที่ต้องการให้ทางเราประเมินราคาได้ทางอีเมลนี้ หรือโทรประสานงานได้ตลอดเวลาครับ
+
+ขอแสดงความนับถือ,
+ฝ่ายขายโครงการ | บริษัท รุ่งจรัสแสงการไฟฟ้า จำกัด
+เบอร์โทรติดต่อ: 02-xxx-xxxx / Line ID: @rungjarassang`;
+
+      document.getElementById("modalScript").innerText = emailTemplate;
       document.getElementById("aiModal").classList.remove("hidden");
+    }
+
+    function copyEmailScript() {
+      const text = document.getElementById("modalScript").innerText;
+      navigator.clipboard.writeText(text).then(() => {
+        const btn = document.getElementById("copyBtn");
+        btn.innerText = "✓ คัดลอกแล้ว!";
+        btn.classList.replace("bg-blue-600", "bg-emerald-600");
+        setTimeout(() => {
+          btn.innerText = "📋 คัดลอกข้อความ";
+          btn.classList.replace("bg-emerald-600", "bg-blue-600");
+        }, 2000);
+      });
     }
 
     function closeAIModal() {
@@ -407,14 +497,20 @@
       const total = allLeads.length;
       let hotCount = 0;
       let uncalledCount = 0;
+      let calledCount = 0;
       let interestedCount = 0;
+      let meetingCount = 0;
+      let rejectedCount = 0;
 
       allLeads.forEach(p => {
         const opp = p.opportunities?.[0];
         if (opp) {
           if (opp.opportunity_score >= 80) hotCount++;
           if (opp.lead_status === "ยังไม่โทร") uncalledCount++;
+          if (opp.lead_status === "โทรแล้ว") calledCount++;
           if (opp.lead_status === "ลูกค้าสนใจ") interestedCount++;
+          if (opp.lead_status === "นัดเข้าพบ") meetingCount++;
+          if (opp.lead_status === "ไม่สนใจ") rejectedCount++;
         }
       });
 
@@ -422,6 +518,9 @@
       document.getElementById("metric-hot").innerText = `${hotCount} รายการ`;
       document.getElementById("metric-uncalled").innerText = `${uncalledCount} รายการ`;
       document.getElementById("metric-interested").innerText = `${interestedCount} รายการ`;
+
+      // อัปเดตกราฟวงกลมพายไลน์
+      updateChart(uncalledCount, calledCount, interestedCount, meetingCount, rejectedCount);
 
       const tbody = document.getElementById("tableBody");
       if (displayedLeads.length === 0) {

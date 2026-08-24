@@ -29,6 +29,30 @@
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen">
 
+  <!-- Modal: ล็อกหน้าจอด้วยระบบยืนยันตัวตน (Login Gate) -->
+  <div id="loginModal" class="fixed inset-0 bg-slate-950/95 backdrop-blur-md flex items-center justify-center p-4 z-[9999]">
+    <div class="bg-slate-900 border border-slate-800 w-full max-w-sm rounded-2xl p-6 shadow-2xl text-center">
+      <div class="text-4xl mb-3">🔒</div>
+      <h2 class="text-lg font-bold text-amber-400">RJSE Security Access</h2>
+      <p class="text-xs text-slate-400 mt-1 mb-5">กรุณาเข้าสู่ระบบเพื่อเข้าใช้งานฐานข้อมูลฝ่ายขาย</p>
+      
+      <form onsubmit="handleLogin(event)" class="space-y-3.5 text-left">
+        <div>
+          <label class="block text-slate-400 text-xs mb-1">ชื่อผู้ใช้งาน (Username)</label>
+          <input type="text" id="loginUser" required placeholder="ใส่ชื่อผู้ใช้ที่ตั้งใน Render" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-amber-400">
+        </div>
+        <div>
+          <label class="block text-slate-400 text-xs mb-1">รหัสผ่าน (Password)</label>
+          <input type="password" id="loginPass" required placeholder="••••••••" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-amber-400">
+        </div>
+        <div id="loginError" class="text-rose-400 text-xs text-center hidden">ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง</div>
+        <button type="submit" id="loginBtn" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-2.5 rounded-lg text-xs transition mt-2">
+          เข้าสู่ระบบ
+        </button>
+      </form>
+    </div>
+  </div>
+
   <div class="max-w-[1600px] mx-auto px-4 py-8">
     <!-- Header Section -->
     <header class="flex flex-col md:flex-row md:items-center justify-between pb-6 border-b border-slate-800 gap-4">
@@ -56,6 +80,10 @@
         <button id="syncBtn" onclick="syncLiveLeads()" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold px-4 py-2 rounded-lg shadow transition">
           <span id="syncIcon">🔄</span>
           <span id="syncText">อัปเดตข้อมูล</span>
+        </button>
+        <button onclick="logout()" class="inline-flex items-center gap-1 bg-slate-800 hover:bg-rose-950 text-slate-300 hover:text-rose-400 border border-slate-700 text-xs px-3 py-2 rounded-lg transition">
+          <span>🚪</span>
+          <span>ออก</span>
         </button>
       </div>
     </header>
@@ -245,6 +273,55 @@
     let mapMarkers = [];
     let pipelineChartInstance = null;
 
+    // ตรวจสอบ Token ตอนโหลดหน้าเว็บ
+    window.addEventListener('DOMContentLoaded', () => {
+      const token = sessionStorage.getItem("rjse_auth_token");
+      if (token) {
+        document.getElementById("loginModal").classList.add("hidden");
+        loadData();
+      }
+    });
+
+    async function handleLogin(e) {
+      e.preventDefault();
+      const u = document.getElementById("loginUser").value;
+      const p = document.getElementById("loginPass").value;
+      const errDiv = document.getElementById("loginError");
+      const btn = document.getElementById("loginBtn");
+
+      btn.innerText = "กำลังตรวจสอบ...";
+      btn.disabled = true;
+      errDiv.classList.add("hidden");
+
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username: u, password: p })
+        });
+        const data = await res.json();
+        if (data.status === "success") {
+          sessionStorage.setItem("rjse_auth_token", data.token);
+          document.getElementById("loginModal").classList.add("hidden");
+          loadData();
+        } else {
+          errDiv.innerText = data.detail || "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง";
+          errDiv.classList.remove("hidden");
+        }
+      } catch (err) {
+        errDiv.innerText = "เชื่อมต่อระบบยืนยันตัวตนไม่สำเร็จ";
+        errDiv.classList.remove("hidden");
+      } finally {
+        btn.innerText = "เข้าสู่ระบบ";
+        btn.disabled = false;
+      }
+    }
+
+    function logout() {
+      sessionStorage.removeItem("rjse_auth_token");
+      location.reload();
+    }
+
     async function loadData() {
       try {
         const res = await fetch(`${API_BASE_URL}/api/projects`);
@@ -335,7 +412,6 @@
       mapMarkers.forEach(m => mapInstance.removeLayer(m));
       mapMarkers = [];
 
-      // ปักหมุดเฉพาะโครงการที่มีการบันทึกพิกัดจริง
       displayedLeads.forEach(p => {
         if (p.latitude && p.longitude) {
           const opp = p.opportunities?.[0] || {};
@@ -473,6 +549,7 @@
       }
     }
 
+    // ฟังก์ชัน Export Excel เว้นระยะขอบเซลล์ (Cell Padding) เหมาะสำหรับพิมพ์ A4 แนวนอน
     function exportToExcel() {
       if (allLeads.length === 0) {
         alert("ไม่มีข้อมูลสำหรับ Export (กรุณาเพิ่มโครงการจริงก่อน)");
@@ -702,8 +779,6 @@
         `;
       }).join("");
     }
-
-    loadData();
   </script>
 </body>
 </html>

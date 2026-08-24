@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RJSE AI Sales Intelligence — บจก. รุ่งจรัสแสงการไฟฟ้า</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    body { font-family: 'Prompt', sans-serif; }
+    .animate-spin-custom { animation: spin 1s linear infinite; }
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen">
+
+  <div class="max-w-[1500px] mx-auto px-4 py-8">
+    <!-- Header -->
+    <header class="flex flex-col md:flex-row md:items-center justify-between pb-6 border-b border-slate-800 gap-4">
+      <div>
+        <div class="flex items-center gap-3">
+          <span class="text-3xl">⚡</span>
+          <h1 class="text-2xl font-bold text-amber-400">RJSE AI Sales Intelligence (Secure Live DB)</h1>
+        </div>
+        <p class="text-slate-400 text-sm mt-1">ระบบชี้เป้าและวิเคราะห์โอกาสงานระบบไฟฟ้า — บจก. รุ่งจรัสแสงการไฟฟ้า</p>
+      </div>
+      
+      <div class="flex items-center gap-3">
+        <button id="syncBtn" onclick="syncLiveLeads()" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold px-4 py-2 rounded-lg shadow transition">
+          <span id="syncIcon">🔄</span>
+          <span id="syncText">ดึงโครงการใหม่เข้าระบบ</span>
+        </button>
+        <span class="inline-flex items-center gap-1.5 bg-emerald-950 text-emerald-400 border border-emerald-800 text-xs px-3 py-1.5 rounded-lg">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Cloud Live
+        </span>
+      </div>
+    </header>
+
+    <!-- KPI Summary Cards -->
+    <section class="grid grid-cols-2 lg:grid-cols-4 gap-4 my-6">
+      <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
+        <span class="text-slate-400 text-xs uppercase tracking-wider">โครงการทั้งหมด</span>
+        <div id="metric-total" class="text-2xl font-bold text-white mt-1">0 รายการ</div>
+      </div>
+      <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
+        <span class="text-slate-400 text-xs uppercase tracking-wider">🔥 โอกาสขายสูง (HOT)</span>
+        <div id="metric-hot" class="text-2xl font-bold text-rose-400 mt-1">0 รายการ</div>
+      </div>
+      <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
+        <span class="text-slate-400 text-xs uppercase tracking-wider">⏳ ยังไม่โทร</span>
+        <div id="metric-uncalled" class="text-2xl font-bold text-amber-400 mt-1">0 รายการ</div>
+      </div>
+      <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
+        <span class="text-slate-400 text-xs uppercase tracking-wider">🟢 ลูกค้าสนใจ</span>
+        <div id="metric-interested" class="text-2xl font-bold text-emerald-400 mt-1">0 รายการ</div>
+      </div>
+    </section>
+
+    <!-- Table Section -->
+    <div class="overflow-x-auto bg-slate-900 border border-slate-800 rounded-xl shadow-2xl">
+      <table class="w-full text-left text-sm text-slate-300">
+        <thead class="bg-slate-950 text-slate-400 uppercase text-xs border-b border-slate-800">
+          <tr>
+            <th class="px-4 py-3.5 text-center w-12">ลำดับ</th>
+            <th class="px-4 py-3.5">ชื่อโครงการ / แหล่งข้อมูล</th>
+            <th class="px-4 py-3.5">บริษัทผู้รับเหมา & เบอร์โทร</th>
+            <th class="px-4 py-3.5 text-right">งบประมาณ</th>
+            <th class="px-4 py-3.5 text-center">คะแนน</th>
+            <th class="px-4 py-3.5 text-center">AI ผู้ช่วยขาย</th>
+            <th class="px-4 py-3.5 text-center min-w-[170px]">สถานะการโทร</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody" class="divide-y divide-slate-800">
+          <tr>
+            <td colspan="7" class="text-center py-10 text-slate-500">กำลังเชื่อมต่อฐานข้อมูล...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- AI Modal -->
+  <div id="aiModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+    <div class="bg-slate-900 border border-slate-700 w-full max-w-2xl rounded-2xl p-6 shadow-2xl relative">
+      <button onclick="closeAIModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-xl">✕</button>
+      
+      <div class="flex items-center gap-2 text-amber-400 font-bold text-lg border-b border-slate-800 pb-3">
+        <span>🤖</span>
+        <span>AI Sales Assistant — บทวิเคราะห์และสคริปต์เปิดการขาย</span>
+      </div>
+
+      <div class="mt-4 space-y-4 text-sm text-slate-300">
+        <div>
+          <span class="text-xs text-slate-500 uppercase tracking-wider block">โครงการ</span>
+          <div id="modalProjName" class="font-semibold text-white mt-0.5"></div>
+        </div>
+
+        <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+          <div class="text-amber-300 font-semibold text-xs uppercase mb-1.5">📦 สินค้าและสเปกท่อที่มีแนวโน้มเหมาะสม:</div>
+          <div id="modalProducts" class="text-slate-200"></div>
+        </div>
+
+        <div class="bg-blue-950/40 p-4 rounded-xl border border-blue-800/40">
+          <div class="text-cyan-300 font-semibold text-xs uppercase mb-1.5">📞 บทพูดแนะนำก่อนโทรหาจัดซื้อ/PM (Talking Points):</div>
+          <div id="modalScript" class="text-slate-200 leading-relaxed italic bg-slate-900/60 p-3 rounded-lg border border-slate-800"></div>
+        </div>
+      </div>
+
+      <div class="mt-6 flex justify-end">
+        <button onclick="closeAIModal()" class="bg-slate-800 hover:bg-slate-700 text-white text-xs px-4 py-2 rounded-lg transition">
+          ปิดหน้าต่าง
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ========================================================
+    // ลิงก์ Render API ปลอดภัย (เปลี่ยนเป็นลิงก์ของคุณถ้าชื่อไม่ตรงกัน)
+    // ========================================================
+    const API_BASE_URL = "https://rjs-lead-api.onrender.com"; 
+    let leadList = [];
+
+    async function loadData() {
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/projects`);
+        const result = await res.json();
+        
+        if (result.status === "success") {
+          leadList = result.data || [];
+          renderDashboard();
+        }
+      } catch (err) {
+        console.error("API Error:", err);
+        document.getElementById("tableBody").innerHTML = `
+          <tr><td colspan="7" class="text-center py-10 text-rose-400">กำลังปลุกเซิร์ฟเวอร์ความปลอดภัย (กรุณารอประมาณ 30 วินาที แล้วรีเฟรชใหม่)...</td></tr>
+        `;
+      }
+    }
+
+    async function updateStatus(opportunityId, newStatus) {
+      try {
+        await fetch(`${API_BASE_URL}/api/update-status`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ opportunity_id: opportunityId, new_status: newStatus })
+        });
+        loadData();
+      } catch (err) {
+        alert("ไม่สามารถบันทึกสถานะได้: " + err.message);
+      }
+    }
+
+    async function syncLiveLeads() {
+      const btn = document.getElementById("syncBtn");
+      const icon = document.getElementById("syncIcon");
+      const text = document.getElementById("syncText");
+
+      icon.classList.add("animate-spin-custom");
+      text.innerText = "กำลังค้นหาโครงการ...";
+      btn.disabled = true;
+
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/sync-leads`, { method: "POST" });
+        const result = await res.json();
+        
+        await loadData();
+        text.innerText = result.new_count > 0 ? `พบโครงการใหม่ +${result.new_count} รายการ` : "ข้อมูลเป็นปัจจุบันแล้ว";
+      } catch (e) {
+        text.innerText = "ดึงข้อมูลไม่สำเร็จ";
+      } finally {
+        icon.classList.remove("animate-spin-custom");
+        btn.disabled = false;
+        setTimeout(() => { text.innerText = "ดึงโครงการใหม่เข้าระบบ"; }, 3500);
+      }
+    }
+
+    function openAIModal(index) {
+      const p = leadList[index];
+      if (!p) return;
+
+      const opp = p.opportunities?.[0] || {};
+      const projName = p.project_name || "";
+      const contractor = p.contractor_name || "บริษัทคู่ค้า";
+
+      document.getElementById("modalProjName").innerText = projName;
+      document.getElementById("modalProducts").innerText = opp.recommended_products || "ท่อร้อยสายไฟ EMT/IMC, รางวายเวย์, อุปกรณ์ข้อต่อ Coupling/Connector";
+
+      let script = `สวัสดีครับ ขอสายฝ่ายจัดซื้อหรือวิศวกรผู้ดูแลโครงการ "${projName}" ครับ... ผมติดต่อจาก บจก. รุ่งจรัสแสงการไฟฟ้า ทราบว่าทาง ${contractor} ได้เริ่มดำเนินงานในโครงการนี้ ทางเราเป็นตัวแทนจำหน่ายท่อร้อยสายไฟ มอก. (EMT, IMC, RSC) และรางวายเวย์ราคาตรงจากโรงงาน จึงขออนุญาตส่งตารางราคาและแคตตาล็อกเทียบสเปกเพื่อประกอบการจัดซื้อครับ`;
+      
+      if (p.project_type && (p.project_type.includes("โรงงาน") || p.project_type.includes("อุตสาหกรรม"))) {
+        script = `สวัสดีครับ ติดต่อฝ่ายจัดซื้อโครงการโรงงานครับ... ทางรุ่งจรัสแสงการไฟฟ้ามีสต็อกท่อหนา IMC/RSC สำหรับงานโรงงานอุตสาหกรรม พร้อมอุปกรณ์ข้อต่อกันน้ำและโคม High Bay LED มาตรฐาน มอก. ยินดีทำราคาโครงการพิเศษให้ทาง ${contractor} ครับ`;
+      }
+
+      document.getElementById("modalScript").innerText = `"${script}"`;
+      document.getElementById("aiModal").classList.remove("hidden");
+    }
+
+    function closeAIModal() {
+      document.getElementById("aiModal").classList.add("hidden");
+    }
+
+    function renderDashboard() {
+      const total = leadList.length;
+      let hotCount = 0;
+      let uncalledCount = 0;
+      let interestedCount = 0;
+
+      leadList.forEach(p => {
+        const opp = p.opportunities?.[0];
+        if (opp) {
+          if (opp.opportunity_score >= 80) hotCount++;
+          if (opp.lead_status === "ยังไม่โทร") uncalledCount++;
+          if (opp.lead_status === "ลูกค้าสนใจ") interestedCount++;
+        }
+      });
+
+      document.getElementById("metric-total").innerText = `${total} รายการ`;
+      document.getElementById("metric-hot").innerText = `${hotCount} รายการ`;
+      document.getElementById("metric-uncalled").innerText = `${uncalledCount} รายการ`;
+      document.getElementById("metric-interested").innerText = `${interestedCount} รายการ`;
+
+      const tbody = document.getElementById("tableBody");
+      if (leadList.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" class="text-center py-10 text-slate-500">ไม่มีรายการในฐานข้อมูล</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = leadList.map((p, idx) => {
+        const opp = p.opportunities?.[0] || {};
+        const score = opp.opportunity_score || 50;
+        const currentStatus = opp.lead_status || "ยังไม่โทร";
+
+        let scoreBadge = "bg-amber-950 text-amber-400 border border-amber-800";
+        if (score >= 80) scoreBadge = "bg-rose-950 text-rose-400 border border-rose-800 font-bold";
+
+        return `
+          <tr class="hover:bg-slate-850/60 transition">
+            <td class="px-4 py-3 text-center text-slate-400 text-xs">${idx + 1}</td>
+            <td class="px-4 py-3">
+              <div class="font-semibold text-white">${p.project_name}</div>
+              <div class="text-xs text-slate-400 mt-0.5">${p.project_type}</div>
+            </td>
+            <td class="px-4 py-3">
+              <div class="text-amber-300 font-medium">${p.contractor_name || '-'}</div>
+              <div class="text-xs text-slate-400 mt-1 flex items-center gap-2">
+                <span>☎️ <a href="tel:${p.contractor_phone}" class="hover:underline text-slate-200">${p.contractor_phone || '-'}</a></span>
+                ${p.contractor_email ? `<span class="text-slate-500">|</span> <span>✉️ ${p.contractor_email}</span>` : ''}
+              </div>
+            </td>
+            <td class="px-4 py-3 text-right font-semibold text-slate-200 whitespace-nowrap">
+              ฿${(p.total_budget || 0).toLocaleString()}
+            </td>
+            <td class="px-4 py-3 text-center whitespace-nowrap">
+              <span class="text-xs px-2.5 py-1 rounded-full ${scoreBadge}">
+                ${score} / 100
+              </span>
+            </td>
+            <td class="px-4 py-3 text-center whitespace-nowrap">
+              <button onclick="openAIModal(${idx})" class="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs px-3 py-1.5 rounded-lg shadow transition">
+                <span>🤖 ถาม AI</span>
+              </button>
+            </td>
+            <td class="px-4 py-3 whitespace-nowrap text-center">
+              <select onchange="updateStatus('${opp.id}', this.value)" class="bg-slate-950 border border-slate-700 text-xs rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-amber-400">
+                <option value="ยังไม่โทร" ${currentStatus === 'ยังไม่โทร' ? 'selected' : ''}>⏳ ยังไม่โทร</option>
+                <option value="โทรแล้ว" ${currentStatus === 'โทรแล้ว' ? 'selected' : ''}>📞 โทรแล้ว</option>
+                <option value="ลูกค้าสนใจ" ${currentStatus === 'ลูกค้าสนใจ' ? 'selected' : ''}>🟢 ลูกค้าสนใจ</option>
+                <option value="นัดเข้าพบ" ${currentStatus === 'นัดเข้าพบ' ? 'selected' : ''}>🏢 นัดเข้าพบ</option>
+                <option value="ไม่สนใจ" ${currentStatus === 'ไม่สนใจ' ? 'selected' : ''}>🔴 ไม่สนใจ</option>
+              </select>
+            </td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    loadData();
+  </script>
+</body>
+</html>

@@ -6,7 +6,7 @@
   <title>RJSE AI Sales Intelligence — บจก. รุ่งจรัสแสงการไฟฟ้า</title>
   
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Library สำหรับ Export เป็น Excel -->
+  <!-- SheetJS สำหรับ Export เป็นไฟล์ Excel -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -32,7 +32,11 @@
         <p class="text-slate-400 text-sm mt-1">ระบบชี้เป้าและติดตามโอกาสงานระบบไฟฟ้า — บจก. รุ่งจรัสแสงการไฟฟ้า</p>
       </div>
       
+      <!-- Action Controls -->
       <div class="flex flex-wrap items-center gap-3">
+        <span class="inline-flex items-center gap-1.5 bg-emerald-950 text-emerald-400 border border-emerald-800 text-xs px-3 py-2 rounded-lg">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Cloud Live
+        </span>
         <button onclick="exportToExcel()" class="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold px-3.5 py-2 rounded-lg shadow transition">
           <span>📊</span>
           <span>โหลดรายงาน Excel</span>
